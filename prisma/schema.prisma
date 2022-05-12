@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Feedback {
+  id String @id @default(uuid())
+
+  type       String
+  comment    String
+  screenshot String?
+
+  @@map("feedbacks")
+}
+
+model User {
+  //user_id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id String @id @default(uuid())
+
+  email     String @unique
+  password  String
+  user_type String
+
+  student   Student @relation("StudentAsUser", fields: [studentId], references: [student_id], onDelete: Cascade, onUpdate: Cascade)
+  studentId String  @unique
+
+  @@map("users")
+}
+
+model Student {
+  student_id String @id @default(uuid())
+
+  first_name String
+  last_name  String
+  birth_date String
+  goal       String
+
+  student_as_user User?       @relation("StudentAsUser")
+  student_count   TimeCount[]
+
+  matters Matter[]
+
+  @@map("students")
+}
+
+model Matter {
+  matter_id Int @id @default(autoincrement())
+
+  matter String
+
+  matter_student Student[]
+  matter_count   TimeCount[]
+
+
+  @@map("matters")
+}
+
+model TimeCount {
+  c_date DateTime @id @default(now())
+
+  time_count Int
+
+  student    Student @relation(fields: [student_id], references: [student_id])
+  student_id String
+  matter     Matter  @relation(fields: [matter_id], references: [matter_id])
+  matter_id  Int
+
+  @@map("time_counts")
+}
