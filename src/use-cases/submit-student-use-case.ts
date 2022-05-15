@@ -5,6 +5,15 @@ interface SubmitStudentUseCaseRequest {
   last_name: string;
   birth_date: string;
   goal: string;
+  student_as_user: {
+    create: [
+      {
+        email: string,
+        password: string,
+        user_type: string,
+      }
+    ]
+  },
 }
 
 export class SubmitStudentUseCase {
@@ -13,13 +22,14 @@ export class SubmitStudentUseCase {
   ) {}
 
   async execute(request: SubmitStudentUseCaseRequest) {
-    const { first_name, last_name, birth_date, goal } = request;
+    const { first_name, last_name, birth_date, goal, student_as_user } = request;
 
     await this.studentsRepository.create({
       first_name, 
       last_name, 
       birth_date, 
-      goal
+      goal,
+      student_as_user
     })
 
   }

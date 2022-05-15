@@ -8,7 +8,7 @@ export class PrismaStudentsRepository implements StudentsRepository {
         first_name, 
         last_name, 
         birth_date, 
-        goal 
+        goal,
       }
     })
   }
