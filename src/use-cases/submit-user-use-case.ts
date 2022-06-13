@@ -1,5 +1,6 @@
 import { UsersRepository } from "../repositories/users-repository";
 import { v4 } from 'uuid'
+import * as bcrypt from 'bcrypt'
 
 interface SubmitUserUseCaseRequest {
   student_id: string
@@ -28,7 +29,9 @@ export class SubmitUserUseCase {
   async execute(request: SubmitUserUseCaseRequest) {
     const { first_name, last_name, birth_date, goal, } = request;
     const userUuid = v4();
-    const studentUuid = v4()
+    const studentUuid = v4();
+
+    const passwordHash = await bcrypt.hash(request.user.create.password, 10)
 
     await this.usersRepository.create({
       student_id: studentUuid,
@@ -40,7 +43,7 @@ export class SubmitUserUseCase {
         create: {
           user_id: userUuid ,
           email: request.user.create.email ,
-          password: request.user.create.password ,
+          password: passwordHash ,
           user_type: request.user.create.user_type ,
           student:{
             student_id: studentUuid,

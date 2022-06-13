@@ -1,7 +1,9 @@
 import { SubmitStudentUseCase } from "./use-cases/submit-student-use-case";
 import { NodemailerMailAdapter } from "./adapters/nodemailer/nodemailer-mail-adapter";
 import { PrismaFeedbacksRepository } from "./repositories/prisma/prisma-feedbacks-repository";
-import express from "express";
+import express, { Request, Response } from "express";
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken'
 
 import { SubmitFeedbackUseCase } from "./use-cases/submit-feedback-use-case";
 import { PrismaStudentsRepository } from "./repositories/prisma/prisma-students-repository";
@@ -12,6 +14,8 @@ import { SubmitTimeCountUseCase } from "./use-cases/submit-time_count-use-case";
 import { PrismaUsersRepository } from "./repositories/prisma/prisma-users-repository";
 import { SubmitUserUseCase } from "./use-cases/submit-user-use-case";
 import { prisma } from "./prisma";
+
+import { auth } from './middlewares/auth'
 
 
 export const routes = express.Router();
@@ -110,6 +114,40 @@ routes.post("/users", async (req, res) => {
 });
 
 //pegar apenas as matérias
+
+
+routes.post("/users/login", async (req: Request, res: Response) => {
+
+  const { password, email } = req.body
+  
+  const user = await prisma.user.findUnique({
+    where: {
+      email: String(email)
+    }
+  });
+
+  if (user) {
+    if (await bcrypt.compare(password, user.password)) {
+      const token = jwt.sign({ id: user.studentId }, process.env.APP_SECRET!, {
+        expiresIn: '1d'
+      })
+
+      const data = {
+        id: user.studentId,
+        token
+      }
+
+      return res.json(data)
+    } else {
+      return res.status(404).json({ message: 'User not found' });
+    }
+  } else {
+    return res.status(404).json({ message: 'User not found' });
+  }
+});
+
+routes.use(auth)
+
 routes.get(`/students/:student_id/matters/`, async (req, res) => {
   const { student_id } = req.params;
   const usermatters = await prisma.student.findMany({
@@ -153,36 +191,3 @@ routes.get(`/students/:student_id/:matter_id`, async (req, res) => {
   res.json(usermatters);
   return;
 });
-
-routes.get("/users/:email/:password", async (req, res) => {
-  const { email, password } = req.params;
-  const user = await prisma.user.findMany({
-    where: {
-      email: String(email),
-      password: String(password),
-    },
-    select: {
-      studentId: true,
-    },
-  });
-  res.json(user);
-});
-
-interface SubmitNewUser {
-  student_id: string;
-  first_name: string;
-  last_name: string;
-  birth_date: string;
-  goal: string;
-  user: {
-    create: {
-      user_id: string;
-      email: string;
-      password: string;
-      user_type: string;
-      student: {
-        student_id: string;
-      };
-    };
-  };
-}
